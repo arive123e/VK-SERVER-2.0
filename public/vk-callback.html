@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Обработка входа...</title>
+</head>
+<body>
+  <h3>Обработка авторизации...</h3>
+  <script>
+    // Получаем параметры из URL (например, ?code=...&device_id=...)
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const device_id = params.get("device_id");
+
+    if (code && device_id) {
+      // Отправляем на сервер, если нужно
+      fetch("https://твоя-ссылка-на-сервер.onrender.com/save-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ code, device_id })
+      })
+      .then(() => {
+        document.body.innerHTML = "<h3>Авторизация успешна!</h3>";
+      })
+      .catch(() => {
+        document.body.innerHTML = "<h3>Ошибка при входе.</h3>";
+      });
+    } else {
+      document.body.innerHTML = "<h3>Некорректные параметры авторизации.</h3>";
+    }
+  </script>
+</body>
+</html>

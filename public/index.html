@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Авторизация через VK ID</title>
+</head>
+<body>
+  <h2>Войти через VK ID</h2>
+  <div id="vkid_container"></div>
+
+  <!-- Подключаем SDK с официального CDN VK -->
+  <script src="https://id.vk.com/sdk/vkid.min.js"></script>
+  <script>
+    if ("VKIDSDK" in window) {
+      const VKID = window.VKIDSDK;
+
+      VKID.Config.init({
+        app: 53335238,
+        redirectUri: "https://arive123e.github.io/vk-auth-test/vk-callback.html", // обновили ссылку
+        responseMode: VKID.ConfigResponseMode.Callback,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: ""
+      });
+
+      const oneTap = new VKID.OneTap();
+
+      oneTap.render({
+        container: document.getElementById("vkid_container"),
+        showAlternativeLogin: true
+      });
+
+      oneTap
+        .on(VKID.WidgetEvents.ERROR, function (error) {
+          console.error("Ошибка VK ID:", error);
+        })
+        .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+          const { code, device_id } = payload;
+
+          VKID.Auth.exchangeCode(code, device_id)
+            .then(data => {
+              console.log("Успешный вход через VK ID", data);
+              // Тут можно отправить на backend
+            })
+            .catch(error => {
+              console.error("Ошибка при обмене кода", error);
+            });
+        });
+    } else {
+      console.error("VKIDSDK не определён");
+    }
+  </script>
+</body>
+</html>
