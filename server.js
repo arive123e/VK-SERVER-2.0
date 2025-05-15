@@ -1,42 +1,46 @@
 const express = require('express');
 const axios = require('axios');
-const app = express();
 require('dotenv').config();
 
-const CLIENT_ID = process.env.VK_CLIENT_ID;
-const CLIENT_SECRET = process.env.VK_CLIENT_SECRET;
-const REDIRECT_URI = process.env.VK_REDIRECT_URI;
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-app.get('/', (req, res) => {
-  res.send(`
-    <h1>Войти через VK ID</h1>
-    <a href="https://id.vk.com/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=your_state_value">Войти</a>
-  `);
+app.get('/auth', (req, res) => {
+  const redirectUri = encodeURIComponent(process.env.REDIRECT_URI);
+  const authUrl = `https://id.vk.com/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&state=test_state`;
+  res.redirect(authUrl);
 });
 
 app.get('/callback', async (req, res) => {
-  const { code } = req.query;
-  if (!code) return res.send('Код авторизации не получен.');
+  const code = req.query.code;
+
+  if (!code) {
+    return res.status(400).send('Код авторизации не получен');
+  }
 
   try {
-    const tokenResponse = await axios.post('https://api.vk.com/method/auth.exchangeCode', null, {
+    const response = await axios.post('https://api.vk.com/method/auth.exchangeCode', null, {
       params: {
-        v: '5.199',
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
-        code
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
+        redirect_uri: process.env.REDIRECT_URI,
+        code,
+        v: '5.199'
       }
     });
 
-    res.send(`<pre>${JSON.stringify(tokenResponse.data, null, 2)}</pre>`);
+    if (response.data.error) {
+      console.log('Ошибка обмена:', response.data.error);
+      return res.status(400).send('Ошибка авторизации');
+    }
+
+    res.send(`Успешно! Токен: ${JSON.stringify(response.data.response)}`);
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.send('Ошибка обмена кода на токен.');
+    console.error('Ошибка при обмене токена:', error);
+    res.status(500).send('Внутренняя ошибка сервера');
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
